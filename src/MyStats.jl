@@ -1,3 +1,4 @@
+__precompile__()
 module MyStats
 using StatsBase: fit, Histogram
 
