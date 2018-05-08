@@ -66,7 +66,7 @@ end
 
 histND_indices(field::NTuple{3,AbstractArray},nbins::NTuple{3,Integer}=(5,5,5)) = histND_indices(field,minimum.(field),maximum.(field),nbins)
 
-function min_max(f::AbstractVector)
+function min_max(f::AbstractArray)
     nt::Int = Threads.nthreads()
     const pmin = zeros(eltype(f),nt)
     const pmax = zeros(eltype(f),nt)
