@@ -45,7 +45,7 @@ function hist_indices(field::AbstractArray,min::Real,max::Real,nbins::Integer=30
     return indices
 end
 
-hist_indices(field::AbstractArray,nbins::Integer=30) = hist_indices(field,minimum(field),maximum(field),nbins)
+hist_indices(field::AbstractArray,nbins::Integer=30) = hist_indices(field,min_max(field)...,nbins)
 
 function histND_indices(field::NTuple{N,AbstractArray},min::NTuple{N,Real},max::NTuple{N,Real},nbins::NTuple{N,Integer}) where {N}
     dx = max .- min
