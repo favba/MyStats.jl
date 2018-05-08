@@ -2,7 +2,7 @@ __precompile__()
 module MyStats
 using StatsBase: fit, Histogram
 
-export hist, hist_indices, histND_indices, min_max
+export hist, hist_indices, histND_indices, min_max, condmean
 
 function hist(field::S,nbins::Int=250,pdf::Bool=true) where S<:AbstractArray
     array = @view(field[:])
@@ -111,6 +111,21 @@ function divide_range(l::Integer,np::Integer)
     end
     a[np] = (m+1):l
     return a
+end
+
+function condmean(field::AbstractArray,condindices)
+    const result = zeros(length(condindices))
+    Threads.@threads for i in linearindices(condindices)
+        @inbounds begin
+            ind = condindices[i]
+            l = length(ind)
+            for j in ind
+                result[i] += field[j]
+            end
+            result[i] = result[i]/l
+        end
+    end
+    return result
 end
 
 end # module
