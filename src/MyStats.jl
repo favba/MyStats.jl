@@ -2,7 +2,7 @@ __precompile__()
 module MyStats
 using StatsBase: fit, Histogram
 
-export hist, hist_indices, histND_indices
+export hist, hist_indices, histND_indices, min_max
 
 function hist(field::S,nbins::Int=250,pdf::Bool=true) where S<:AbstractArray
     array = @view(field[:])
@@ -65,5 +65,52 @@ function histND_indices(field::NTuple{N,AbstractArray},min::NTuple{N,Real},max::
 end
 
 histND_indices(field::NTuple{3,AbstractArray},nbins::NTuple{3,Integer}=(5,5,5)) = histND_indices(field,minimum.(field),maximum.(field),nbins)
+
+function min_max(f::AbstractVector)
+    nt::Int = Threads.nthreads()
+    const pmin = zeros(eltype(f),nt)
+    const pmax = zeros(eltype(f),nt)
+
+    Threads.@threads for i in 1:nt
+        get_min_max(f,pmin,pmax,i)
+    end
+    
+    return minimum(pmin), maximum(pmax)
+end
+
+function get_min_max(f,pmi,pma,i)
+    nt::Int = Threads.nthreads()
+
+    r = divide_range(length(f), nt)[i]
+
+    minv = f[r[1]]
+    maxv = f[r[1]]
+
+    @inbounds for j in r
+        if f[j] > maxv
+            maxv = f[j]
+        elseif f[j] < minv
+            minv = f[j]
+        end
+    end
+
+    pmi[i] = minv
+    pma[i] = maxv
+    return nothing 
+end
+
+function divide_range(l::Integer,np::Integer)
+    p = l÷np
+
+    m = p
+    a = Vector{UnitRange{Int}}(np)
+    a[1] = 1:m
+    @inbounds for i=2:(np-1)
+        a[i] = (m+1):(m+p)
+        m = m+p
+    end
+    a[np] = (m+1):l
+    return a
+end
 
 end # module
