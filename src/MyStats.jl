@@ -2,7 +2,7 @@ __precompile__()
 module MyStats
 using StatsBase: fit, Histogram
 
-export hist, hist_indices, histND_indices, min_max, condmean
+export hist, hist_indices, histND_indices, min_max, condmean, Bins
 
 function hist(field::S,nbins::Int=250,pdf::Bool=true) where S<:AbstractArray
     array = @view(field[:])
@@ -126,6 +126,26 @@ function condmean(field::AbstractArray,condindices)
         end
     end
     return result
+end
+
+struct Bins <: AbstractVector{Float64}
+    minv::Float64
+    maxv::Float64
+    n::Int
+    dx::Float64
+    Bins(minv,maxv,n) = new(minv,maxv,n,(maxv-minv)/n)
+end
+
+
+Base.length(a::Bins) = a.n
+Base.size(a::Bins) = (a.n,)
+Base.step(a::Bins) = a.dx
+Base.IndexStyle(::Type{Bins}) = IndexLinear()
+
+@inline function Base.getindex(a::Bins,i::Integer) 
+    @boundscheck((1 <= i <= a.n) || throw(BoundsError(a,i)))
+    dx = a.dx
+    return (a.minv + dx/2) + (i-1)*dx 
 end
 
 end # module
