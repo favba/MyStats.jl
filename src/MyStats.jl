@@ -145,7 +145,7 @@ Base.IndexStyle(::Type{Bins}) = IndexLinear()
 @inline function Base.getindex(a::Bins,i::Integer) 
     @boundscheck((1 <= i <= a.n) || throw(BoundsError(a,i)))
     dx = a.dx
-    return (a.minv + dx/2) + (i-1)*dx 
+    return (a.minv + 0.5*dx) + (i-1)*dx 
 end
 
 end # module
