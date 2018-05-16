@@ -163,8 +163,6 @@ function dbkhist_indices(field::AbstractArray, nbins::Integer=30)
 
 end
 
-dbkhist_indices(field::AbstractArray, nbins::Integer=30) = dbkhist_indices(field, nbins)
-
 struct dbkBins <: AbstractVector{Float64}
     edges::Vector{Float64}
     n::Int
