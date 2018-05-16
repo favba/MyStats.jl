@@ -150,7 +150,7 @@ end
 
 function dbkhist_indices(field::AbstractArray, nbins::Integer=30)
 
-    indicesp = sortperm(field)
+    indicesp = sortperm(vec(field))
 
     indices = Vector{Vector{Int}}(nbins)
   
