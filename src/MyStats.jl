@@ -2,7 +2,7 @@ __precompile__()
 module MyStats
 using StatsBase: fit, Histogram
 
-export hist, hist_indices, histND_indices, min_max, condmean, Bins
+export hist, hist_indices, histND_indices, min_max, condmean, Bins, dbkhist_indices, dbkBins
 
 function hist(field::S,nbins::Int=250,pdf::Bool=true) where S<:AbstractArray
     array = @view(field[:])
@@ -146,6 +146,39 @@ Base.IndexStyle(::Type{Bins}) = IndexLinear()
     @boundscheck((1 <= i <= a.n) || throw(BoundsError(a,i)))
     dx = a.dx
     return (a.minv + 0.5*dx) + (i-1)*dx 
+end
+
+function dbkhist_indices(field::AbstractArray, nbins::Integer=30)
+
+    indicesp = sortperm(field)
+
+    indices = Vector{Vector{Int}}(nbins)
+  
+    ranges = divide_range(length(field),nbins)
+    @inbounds for i in 1:nbins
+        indices[i] = indicesp[ranges[i]]
+    end
+    
+    return indices
+
+end
+
+dbkhist_indices(field::AbstractArray, nbins::Integer=30) = dbkhist_indices(field, nbins)
+
+struct dbkBins <: AbstractVector{Float64}
+    edges::Vector{Float64}
+    n::Int
+    dbkBins(edges) = new(edges,length(endges)-1)
+end
+
+Base.length(a::dbkBins) = a.n
+Base.size(a::dbkBins) = (a.n,)
+Base.IndexStyle(::Type{dbkBins}) = IndexLinear()
+
+@inline function Base.getindex(a::dbkBins,i::Integer) 
+    @boundscheck((1 <= i <= a.n) || throw(BoundsError(a,i)))
+    ed = a.edges
+    return 0.5*(ed[i] + ed[i+1])
 end
 
 end # module
