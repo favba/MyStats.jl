@@ -3,7 +3,7 @@ module MyStats
 
 export hist, hist_indices, histND_indices, min_max, condmean, Bins, dbkhist_indices, dbkBins
 
-function hist(field::AbstractArray, min::Real, max::Real, nbins::Integer=30, pdf::Bool=true)
+function hist(field::AbstractArray, min::Real, max::Real, nbins::Integer=100, pdf::Bool=true)
     dx = max - min
     indices = Vector{Float64}(nbins)
     
@@ -21,9 +21,9 @@ function hist(field::AbstractArray, min::Real, max::Real, nbins::Integer=30, pdf
     return [x indices]
 end
 
-hist(field::AbstractArray, nbins::Integer=30, pdf::Bool=true) = hist(field, min_max(field)..., nbins, pdf)
+hist(field::AbstractArray, nbins::Integer=100, pdf::Bool=true) = hist(field, min_max(field)..., nbins, pdf)
 
-hist(field::AbstractArray, indices::AbstractVector{<:Integer}, nbins::Integer=30, pdf::Bool=true) = hist(view(field,indices), nbins, pdf)
+hist(field::AbstractArray, indices::AbstractVector{<:Integer}, nbins::Integer=100, pdf::Bool=true) = hist(view(field,indices), nbins, pdf)
 
 # return a Vector of Vectors of indices corresponding to the bin.
 function hist_indices(field::AbstractArray,min::Real,max::Real,nbins::Integer=30)
