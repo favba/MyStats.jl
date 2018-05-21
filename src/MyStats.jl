@@ -1,32 +1,29 @@
 __precompile__()
 module MyStats
-using StatsBase: fit, Histogram
 
 export hist, hist_indices, histND_indices, min_max, condmean, Bins, dbkhist_indices, dbkBins
 
-function hist(field::S,nbins::Int=250,pdf::Bool=true) where S<:AbstractArray
-    array = @view(field[:])
-    h = fit(Histogram,array,nbins=nbins,closed=:left)
-    x = [(h.edges[1][i] + h.edges[1][i+1])/2 for i=1:(length(h.edges[1])-1)]
-    if pdf
-        y = h.weights/(sum(h.weights)*step(h.edges[1]))
-    else
-        y = h.weights
+function hist(field::AbstractArray, min::Real, max::Real, nbins::Integer=30, pdf::Bool=true)
+    dx = max - min
+    indices = Vector{Float64}(nbins)
+    
+    @inbounds for i in linearindices(field)
+        n = trunc(Int, ((field[i] - min)/dx - eps())*nbins) + 1
+        indices[n] += 1.
     end
-    return [x y]
+    
+    x = Bins(min,max,nbins)
+    if pdf
+        area = sum(indices)*step(x)
+        indices ./= area
+    end
+    
+    return [x indices]
 end
 
-function hist(field::S, indices::Array{T,1}, nbins::Int=250,pdf::Bool=true) where {S<:AbstractArray,T<:Integer}
-    array = @view(field[indices])
-    h = fit(Histogram,array,nbins=nbins,closed=:left)
-    x = [(h.edges[1][i] + h.edges[1][i+1])/2 for i=1:(length(h.edges[1])-1)]
-    if pdf
-        y = h.weights/(sum(h.weights)*step(h.edges[1]))
-    else
-        y = h.weights
-    end
-    return [x y]
-end
+hist(field::AbstractArray, nbins::Integer=30, pdf::Bool=true) = hist(field, min_max(field)..., nbins, pdf)
+
+hist(field::AbstractArray, indices::AbstractVector{<:Integer}, nbins::Integer=30, pdf::Bool=true) = hist(view(field,indices), nbins, pdf)
 
 # return a Vector of Vectors of indices corresponding to the bin.
 function hist_indices(field::AbstractArray,min::Real,max::Real,nbins::Integer=30)
