@@ -29,9 +29,10 @@ hist(field::AbstractArray, indices::AbstractVector{<:Integer}, nbins::Integer=10
 function hist_indices(field::AbstractArray,min::Real,max::Real,nbins::Integer=30)
     dx = max - min
     indices = Vector{Vector{Int}}(nbins)
-    
+    hint = length(field)÷nbins 
     @inbounds for i in linearindices(indices)
         indices[i] = Vector{Int}()
+        sizehint!(indices[i],hint)
     end
 
     @inbounds for i in linearindices(field)
