@@ -135,7 +135,7 @@ function condmean(field::AbstractArray,condindices)
             for j in ind
                 err[i] += (field[j] - m)^2
             end
-            err[i] = sqrt(err[i]/(l-1))
+            err[i] = sqrt(err[i]/(l*(l-1)))
         end
     end
     return result, err
