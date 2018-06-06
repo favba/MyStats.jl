@@ -122,6 +122,7 @@ end
 
 function condmean(field::AbstractArray,condindices)
     const result = zeros(length(condindices))
+    const err = zeros(length(condindices))
     Threads.@threads for i in linearindices(condindices)
         @inbounds begin
             ind = condindices[i]
@@ -129,10 +130,15 @@ function condmean(field::AbstractArray,condindices)
             for j in ind
                 result[i] += field[j]
             end
-            result[i] = result[i]/l
+            m = result[i]/l
+            result[i] = m
+            for j in ind
+                err[i] += (field[j] - m)^2
+            end
+            err[i] = sqrt(err[i]/(l-1))
         end
     end
-    return result
+    return result, err
 end
 
 struct Bins <: AbstractVector{Float64}
