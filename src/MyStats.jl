@@ -62,11 +62,16 @@ function histND_indices(field::NTuple{N,AbstractArray},min::NTuple{N,Real},max::
     return indices
 end
 
-histND_indices(field::NTuple{N,AbstractArray},nbins::NTuple{N,Integer}) where {N} = histND_indices(field,min_max.(field)...,nbins)
+histND_indices(field::NTuple{N,AbstractArray},nbins::NTuple{N,Integer}) where {N} = histND_indices(field,min_max(field)...,nbins)
 
 histND_indices(field::NTuple{3,AbstractArray}) = histND_indices(field,(5,5,5))
 
 histND_indices(field::NTuple{2,AbstractArray}) = histND_indices(field,(12,12))
+
+function min_max(f::NTuple{N,AbstractArray}) where N
+    aux = min_max.(f)
+    return (getindex.(aux,1), getindex.(aux,2))
+end
 
 function min_max(f::AbstractArray)
     nt::Int = Threads.nthreads()
