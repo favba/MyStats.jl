@@ -34,10 +34,11 @@ function hist_indices(field::AbstractArray,min::Real,max::Real,nbins::Integer=30
         indices[i] = Vector{Int}()
         sizehint!(indices[i],hint)
     end
-
+    
+    l = length(field)
     @inbounds for i in linearindices(field)
         n = trunc(Int, ((field[i] - min)/dx - eps())*nbins) + 1
-        push!(indices[n],i)
+        (1 <= n <= l) && push!(indices[n],i)
     end
 
     return indices
@@ -53,9 +54,10 @@ function histND_indices(field::NTuple{N,AbstractArray},min::NTuple{N,Real},max::
         indices[i] = Vector{Int}()
     end
 
+    l = length.(field)
     @inbounds for i in linearindices(field[1])
         n = @. trunc(Int, ((getindex(field,i) - min)/dx - eps())*nbins) + 1
-        push!(indices[n...],i)
+        all(1 .<= n .<= l) && push!(indices[n...],i)
     end
 
 
