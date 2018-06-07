@@ -1,7 +1,7 @@
 __precompile__()
 module MyStats
 
-export hist, hist_indices, histND_indices, min_max, condmean, Bins, dbkhist_indices, dbkBins
+export hist, hist_indices, histND_indices, min_max, min_max_ind, condmean, Bins, dbkhist_indices, dbkBins, threaded_sum, tmean, tstd
 
 function hist(field::AbstractArray, min::Real, max::Real, nbins::Integer=100, pdf::Bool=true)
     dx = max - min
@@ -120,6 +120,51 @@ function divide_range(l::Integer,np::Integer)
     return a
 end
 
+function min_max_ind(f::AbstractArray)
+    nt::Int = Threads.nthreads()
+    const imin = zeros(Int,nt)
+    const imax = zeros(Int,nt)
+
+    Threads.@threads for i in 1:nt
+        get_min_max_ind(f,imin,imax,i)
+    end
+    
+    return compare_ind(f,imin,Base.:<), compare_ind(f,imax,Base.:>)
+end
+
+function get_min_max_ind(f,pmi,pma,i)
+    nt::Int = Threads.nthreads()
+
+    r = divide_range(length(f), nt)[i]
+
+    minv = r[1]
+    maxv = r[1]
+
+    @inbounds for j in r
+        if f[j] > f[maxv]
+            maxv = j
+        elseif f[j] < f[minv]
+            minv = j
+        end
+    end
+
+    pmi[i] = minv
+    pma[i] = maxv
+    return nothing 
+end
+
+function compare_ind(v::AbstractArray,ind,f::Function)
+    tv = ind[1]
+
+    @inbounds for j in ind
+        if f(v[j],v[tv])
+            tv = j
+        end
+    end
+
+    return tv
+end
+
 function condmean(field::AbstractArray,condindices)
     const result = zeros(length(condindices))
     const err = zeros(length(condindices))
@@ -191,5 +236,36 @@ Base.IndexStyle(::Type{dbkBins}) = IndexLinear()
     ed = a.edges
     return 0.5*(ed[i] + ed[i+1])
 end
+
+function threaded_sum(v,func::Function=Base.identity)
+    nt::Int = Threads.nthreads()
+    const result = zeros(eltype(v),nt)
+    ranges = divide_range(length(v),nt)
+    Threads.@threads for i in 1:nt
+        get_sum!(result,v,func,ranges[i],i)
+    end
+
+    return sum(result)
+end
+
+function get_sum!(result::AbstractVector,v::AbstractArray,f::Function,ran,j::Integer)
+    @inbounds begin
+        r = zero(eltype(v))
+        @simd for i in ran
+            r += f(v[i])
+        end
+        result[j] = r
+    end
+    return nothing
+end
+
+tmean(v::AbstractArray,func::Function=Base.identity) = threaded_sum(v,func)/length(v)
+
+function tstd(v::AbstractArray,func::Function=Base.identity,m::Number=tmean(v,func))
+    f = x->((func(x)-m)^2)
+    return sqrt(threaded_sum(v,f)/(length(v)-1))
+end
+
+tstd(v::AbstractArray,m::Number) = tstd(v,Base.identity,m)
 
 end # module
