@@ -1,7 +1,7 @@
 __precompile__()
 module MyStats
 
-export hist, hist_indices, histND_indices, min_max, min_max_ind, condmean, Bins, dbkhist_indices, dbkBins, threaded_sum, tmean, tstd
+export hist, hist_indices, histND_indices, min_max, min_max_ind, condmean, Bins, dbkhist_indices, dbkBins, threaded_sum, tmean, tstd, histstd
 
 function hist(field::AbstractArray, min::Real, max::Real, nbins::Integer=100, pdf::Bool=true)
     dx = max - min
@@ -267,5 +267,30 @@ function tstd(v::AbstractArray,func::Function=Base.identity,m::Number=tmean(v,fu
 end
 
 tstd(v::AbstractArray,m::Number) = tstd(v,Base.identity,m)
+
+function histstd(field::AbstractArray, min::Real, max::Real, nbins::Integer=100, pdf::Bool=true)
+    dx = max - min
+    indices = Vector{Float64}(nbins)
+    @inbounds for i in linearindices(field)
+        n = trunc(Int, ((field[i] - min)/dx - eps())*nbins) + 1
+        (1 <= n <= nbins) && (indices[n] += 1.)
+    end
+    
+    x = Bins(min,max,nbins)
+    if pdf
+        area = sum(indices)*step(x)
+        indices ./= area
+    end
+    
+    return [x indices]
+end
+
+histstd(field::AbstractArray,m::Real,stand::Real,ntimes::Real,nbins::Integer=100,pdf::Bool=true) = histstd(field,m-ntimes*stand,m+ntimes*stand,nbins,pdf)
+
+function histstd(field::AbstractArray,ntimes::Real,nbins::Integer=100,pdf::Bool=true)
+    m = tmean(field)
+    stand = tstd(field,m)
+    histstd(field,m-ntimes*stand,m+ntimes*stand,nbins,pdf)
+end
 
 end # module
