@@ -1,7 +1,7 @@
 __precompile__()
 module MyStats
 
-export hist, hist_indices, histND_indices, min_max, min_max_ind, condmean, Bins, dbkhist_indices, dbkBins, threaded_sum, tmean, tstd, histstd
+export hist, hist_indices, histND, histND_indices, min_max, min_max_ind, condmean, Bins, dbkhist_indices, dbkBins, threaded_sum, tmean, tstd, histstd
 
 function hist(field::AbstractArray, min::Real, max::Real, nbins::Integer=100, pdf::Bool=true)
     dx = max - min
@@ -67,6 +67,32 @@ histND_indices(field::NTuple{N,AbstractArray},nbins::NTuple{N,Integer}) where {N
 histND_indices(field::NTuple{3,AbstractArray}) = histND_indices(field,(5,5,5))
 
 histND_indices(field::NTuple{2,AbstractArray}) = histND_indices(field,(12,12))
+
+###################################
+
+function histND(field::NTuple{N,AbstractArray},min::NTuple{N,Real},max::NTuple{N,Real},nbins::NTuple{N,Integer},pdf::Bool=true) where {N}
+    dx = max .- min
+    indices = zeros(Float64,nbins)
+    
+    @inbounds for i in linearindices(field[1])
+        n = @. trunc(Int, ((getindex(field,i) - min)/dx - eps())*nbins) + 1
+        indices[n...] += 1.
+    end
+    x = Bins.(min,max,nbins)
+    barea = prod((max .- min) ./ nbins)
+    if pdf
+        area = sum(indices)*barea
+        indices ./= area
+    end
+
+    return x, indices
+end
+
+histND(field::NTuple{N,AbstractArray},nbins::NTuple{N,Integer}) where {N} = histND(field,min_max(field)...,nbins)
+
+histND(field::NTuple{3,AbstractArray}) = histND(field,(5,5,5))
+
+histND(field::NTuple{2,AbstractArray}) = histND(field,(12,12))
 
 function min_max(f::NTuple{N,AbstractArray}) where N
     aux = min_max.(f)
